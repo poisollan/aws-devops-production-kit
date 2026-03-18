@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: Build and Push Docker Image
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  deploy:
+  docker:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,15 +25,3 @@ jobs:
           context: ./app
           push: true
           tags: mohanbakthi/mohan-flask-app:latest
-
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            sudo docker pull mohanbakthi/mohan-flask-app:latest
-            sudo docker stop flask-app || true
-            sudo docker rm flask-app || true
-            sudo docker run -d --name flask-app -p 80:5000 mohanbakthi/mohan-flask-app:latest
