@@ -1,208 +1,292 @@
-# DevOps Starter Kit – Setup Guide
+# 🚀 AWS DevOps Production Kit – Beginner Friendly Setup Guide
 
-This guide explains how to deploy the project using Terraform, Docker, and GitHub Actions.
-
----
-
-## 1. Prerequisites
-
-Before starting, make sure you have:
-
-- AWS Account
-- Docker Hub Account
-- GitHub Account
-- Git installed
-- Terraform installed
-- AWS CLI installed
+Don’t worry if you are new to DevOps.
+Follow this guide step-by-step and your project will run successfully.
 
 ---
 
-## 2. Clone the Repository
+# 🧠 What You Are Building
 
-Clone the project repository:
+You are going to deploy:
 
-git clone https://github.com/YOUR_USERNAME/aws-terraform-devops-starter.git
-cd aws-terraform-devops-starter
-
----
-
-## 3. Create AWS Key Pair
-
-Go to AWS Console:
-
-EC2 → Key Pairs → Create Key Pair
-
-Example key name:
-
-devops-key
-
-Download the .pem file and store it safely.
-
-Place the .pem file inside your local project directory.
+* A web app (Flask)
+* Running inside Docker
+* Hosted on AWS EC2
+* Load balanced using ALB
+* Auto-scaled using Auto Scaling Group
+* Automatically built using GitHub Actions
 
 ---
 
-## 4. Configure Terraform Variables
+# ⚠️ Before You Start
 
-Open the file:
+Make sure you have:
 
-variables.tf
+✅ AWS account
+✅ GitHub account
+✅ Docker Hub account
 
-Update the values if necessary.
+And install these on your system:
 
-Example:
-
-region = "us-east-1"
-instance_type = "t2.micro"
-key_name = "devops-key"
+```bash
+Terraform
+AWS CLI
+Docker
+Git
+```
 
 ---
 
-## 5. Configure AWS Credentials
+# 🔑 STEP 1 – Clone the Project
+
+Open terminal and run:
+
+```bash
+git clone https://github.com/YOUR_USERNAME/aws-devops-production-kit.git
+cd aws-devops-production-kit
+```
+
+---
+
+# 🔑 STEP 2 – Configure AWS
 
 Run:
 
+```bash
 aws configure
+```
 
-Enter your credentials:
+Enter:
 
-AWS Access Key 
-AWS Secret Access Key 
-Region 
-Output format 
+* AWS Access Key
+* AWS Secret Key
+* Region → `us-east-1`
 
 ---
 
-## 6. Deploy Infrastructure
+# 🔑 STEP 3 – Create Key Pair in AWS
 
-Initialize Terraform:
+Go to AWS Console → EC2 → Key Pairs
 
+Create a key:
+
+```text
+Name: devops-key
+```
+
+Download the `.pem` file.
+
+Move it safely:
+
+```bash
+mkdir -p ~/.ssh/devops-keys
+mv devops-key.pem ~/.ssh/devops-keys/
+chmod 400 ~/.ssh/devops-keys/devops-key.pem
+```
+
+---
+
+# 🔑 STEP 4 – Configure Terraform Variables
+
+Go to terraform folder:
+
+```bash
+cd terraform
+```
+
+Create file:
+
+```bash
+nano terraform.tfvars
+```
+
+Paste:
+
+```hcl
+aws_region           = "us-east-1"
+project_name         = "devops-kit"
+
+vpc_cidr             = "10.0.0.0/16"
+public_subnet_1_cidr = "10.0.1.0/24"
+public_subnet_2_cidr = "10.0.2.0/24"
+
+availability_zone_1  = "us-east-1a"
+availability_zone_2  = "us-east-1b"
+
+instance_type = "t3.micro"
+key_name      = "devops-key"
+
+docker_image  = "YOUR_DOCKERHUB_USERNAME/mohan-flask-app:latest"
+```
+
+👉 Replace `YOUR_DOCKERHUB_USERNAME`
+
+---
+
+# 🔑 STEP 5 – Deploy Infrastructure
+
+Run:
+
+```bash
 terraform init
+terraform apply -auto-approve
+```
 
-Preview resources:
-
-terraform plan
-
-Deploy infrastructure:
-
-terraform apply
-
-Terraform will create the following resources:
-
-- VPC
-- Public Subnet
-- Internet Gateway
-- Route Table
-- Security Group
-- EC2 Instance
-
-After deployment Terraform will output:
-
-website_ip
-
-Example:
-
-http://44.xxx.xxx.xxx
+Wait 2–3 minutes.
 
 ---
 
-## 7. Build and Push Docker Image
+# 🌐 STEP 6 – Get Your App URL
 
-The project includes a Flask application container.
+Run:
 
-GitHub Actions automatically performs the following steps:
+```bash
+terraform output
+```
 
-1. Builds the Docker image
-2. Pushes the image to Docker Hub
-3. Deploys the container to EC2
+You will see:
 
----
+```text
+http://xxxx.alb.amazonaws.com
+```
 
-## 8. Configure GitHub Secrets
-
-In your GitHub repository navigate to:
-
-Settings → Secrets and variables → Actions
-
-Add the following secrets:
-
-DOCKERHUB_USERNAME 
-DOCKERHUB_TOKEN 
-EC2_HOST 
-EC2_USERNAME 
-EC2_SSH_KEY 
-
-Example values:
-
-EC2_HOST = your EC2 public IP 
-EC2_USERNAME = ec2-user 
-EC2_SSH_KEY = contents of your .pem file 
-DOCKERHUB_USERNAME = your Docker Hub username 
-DOCKERHUB_TOKEN = Docker Hub access token 
+Open it in browser.
 
 ---
 
-## 9. Trigger the CI/CD Pipeline
+# 🐳 STEP 7 – Push Your App to Docker Hub
 
-Push any code change to the repository:
+Go back to project root:
 
+```bash
+cd ..
+```
+
+Build image:
+
+```bash
+docker build -t YOUR_DOCKERHUB_USERNAME/mohan-flask-app:latest ./app
+```
+
+Login:
+
+```bash
+docker login
+```
+
+Push:
+
+```bash
+docker push YOUR_DOCKERHUB_USERNAME/mohan-flask-app:latest
+```
+
+---
+
+# 🔄 STEP 8 – Setup GitHub Actions (CI/CD)
+
+Go to GitHub → Your Repo → Settings → Secrets
+
+Add:
+
+### 1. Docker Hub Username
+
+```text
+DOCKERHUB_USERNAME
+```
+
+### 2. Docker Hub Token
+
+```text
+DOCKERHUB_TOKEN
+```
+
+---
+
+# 🔁 STEP 9 – Trigger Deployment
+
+Push any change:
+
+```bash
 git add .
-git commit -m "deploy update"
+git commit -m "trigger deployment"
 git push
+```
 
-GitHub Actions will automatically:
+GitHub Actions will:
 
-- Build the Docker image
-- Push the image to Docker Hub
-- SSH into the EC2 instance
-- Deploy the latest container
-
----
-
-## 10. Access the Application
-
-Open your browser and visit:
-
-http://YOUR_EC2_PUBLIC_IP
-
-Your Flask application should now be running.
+* build Docker image
+* push to Docker Hub
 
 ---
 
-## Deployment Architecture
+# 🔄 STEP 10 – Refresh Instances
 
-Developer 
-↓ 
-GitHub Repository 
-↓ 
-GitHub Actions 
-↓ 
-Docker Hub 
-↓ 
-EC2 Instance 
-↓ 
-Docker Container 
-↓ 
-Flask Application 
+Go to AWS → EC2 → Instances
+
+Terminate running instances.
+
+Auto Scaling will create new ones automatically.
 
 ---
 
-## Destroy Infrastructure
+# 🎯 Done!
 
-To remove all AWS resources created by Terraform:
+Now open your ALB URL again.
 
-terraform destroy
+You should see:
 
----
-
-## Support
-
-If you encounter issues, review:
-
-- Terraform logs
-- GitHub Actions workflow logs
-- Docker container logs
+```text
+AWS DevOps Production Kit is running successfully!
+```
 
 ---
 
-Enjoy your DevOps pipeline 🚀
+# 🛠 Troubleshooting
+
+### ❌ App not loading
+
+* Wait 2 minutes
+* Check Target Group → Health = healthy
+
+### ❌ Docker not running
+
+SSH into instance:
+
+```bash
+ssh -i ~/.ssh/devops-keys/devops-key.pem ec2-user@<public-ip>
+docker ps
+```
+
+---
+
+# 💸 Important (Cost)
+
+* ALB may cost small amount
+* Always destroy after testing:
+
+```bash
+cd terraform
+terraform destroy -auto-approve
+```
+
+---
+
+# 🚀 You Built
+
+* Scalable AWS system
+* CI/CD pipeline
+* Containerized app
+* Production-style infra
+
+---
+
+# 💡 Next Steps
+
+* Add HTTPS
+* Use ECR
+* Add logging
+* Improve scaling
+
+---
+
+🔥 You now have a real DevOps project!

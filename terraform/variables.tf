@@ -33,3 +33,9 @@ variable "instance_type" {
 variable "key_name" {}
 
 variable "docker_image" {}
+
+variable "cpu_target_value" {
+  description = "Target CPU utilization for scaling"
+  type        = number
+  default     = 50
+}
