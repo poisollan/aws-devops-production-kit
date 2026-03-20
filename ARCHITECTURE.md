@@ -1,116 +1,291 @@
-# DevOps Pipeline Architecture
+# 🏗️ AWS DevOps Production Kit – Architecture
 
-This project demonstrates a complete DevOps workflow using Terraform, Docker, GitHub Actions, and AWS EC2.
-
----
-
-## Overview
-
-The system automatically builds, publishes, and deploys a containerized application whenever code is pushed to GitHub.
+This document explains the architecture of the AWS DevOps Production Kit in a simple and clear way.
 
 ---
 
-## Architecture Flow
+# 🎯 Overview
 
-Developer
-↓
-GitHub Repository
-↓
-GitHub Actions CI/CD Pipeline
-↓
-Docker Image Build
-↓
-Push Image to Docker Hub
-↓
-SSH Deployment to AWS EC2
-↓
-Docker Container Execution
-↓
-Flask Web Application
+This project demonstrates a **production-ready DevOps system** built using:
+
+* AWS (EC2, ALB, Auto Scaling, VPC, CloudWatch)
+* Terraform (Infrastructure as Code)
+* Docker (Application containerization)
+* GitHub Actions (CI/CD)
+
+The system is designed to be:
+
+* Scalable 📈
+* Highly available 🌍
+* Automated 🔄
+* Beginner-friendly 🚀
 
 ---
 
-## Components Used
+# 🧠 High-Level Architecture
 
-Infrastructure as Code
-- Terraform
-- AWS VPC
-- AWS Subnet
-- AWS Internet Gateway
-- AWS Security Group
-- AWS EC2
-
-Containerization
-- Docker
-- Docker Hub
-
-CI/CD Pipeline
-- GitHub Actions
-
-Application
-- Flask (Python)
+```text
+Users → Internet → ALB → Target Group → Auto Scaling Group → EC2 → Docker App
+```
 
 ---
 
-## Deployment Process
+# 🏗️ Architecture Diagram
 
-1. Developer pushes code to GitHub repository.
-2. GitHub Actions workflow is triggered.
-3. The pipeline builds a Docker image from the Flask application.
-4. The Docker image is pushed to Docker Hub.
-5. GitHub Actions connects to the EC2 instance using SSH.
-6. The old container is stopped and removed.
-7. The latest Docker image is pulled from Docker Hub.
-8. A new container is started on the EC2 instance.
+![Architecture](architecture.png)
 
 ---
 
-## Infrastructure Provisioning
+# ⚙️ Core Components
 
-Terraform automatically creates the following resources:
+## 🌐 1. VPC (Virtual Private Cloud)
 
-- VPC
-- Public Subnet
-- Internet Gateway
-- Route Table
-- Security Group
-- EC2 Instance
-
-The EC2 instance installs Docker automatically using user_data.
+* CIDR: `10.0.0.0/16`
+* Provides isolated network environment
+* All resources are deployed inside the VPC
 
 ---
 
-## CI/CD Workflow
+## 🧩 2. Public Subnets
 
-GitHub Actions performs the following tasks:
+* Subnet 1: `10.0.1.0/24` (AZ1)
+* Subnet 2: `10.0.2.0/24` (AZ2)
 
-- Checkout source code
-- Authenticate with Docker Hub
-- Build Docker image
-- Push image to Docker Hub
-- Deploy updated container to EC2
+Purpose:
+
+* High availability across Availability Zones
+* Host EC2 instances and ALB
 
 ---
 
-## Application Access
+## 🌍 3. Internet Gateway
 
-After deployment, the application can be accessed using:
+* Enables internet access
+* Required for public web applications
 
-http://EC2_PUBLIC_IP
+---
+
+## 🛣️ 4. Route Table
+
+* Routes `0.0.0.0/0` traffic to Internet Gateway
+* Allows inbound and outbound internet traffic
+
+---
+
+## 🔐 5. Security Groups
+
+### ALB Security Group
+
+* Allows HTTP (port 80) from the internet
+
+### EC2 Security Group
+
+* Allows HTTP from ALB
+* Allows SSH (port 22) for admin access
+
+---
+
+## ⚖️ 6. Application Load Balancer (ALB)
+
+* Distributes incoming traffic
+* Routes requests to healthy EC2 instances
+* Improves availability and reliability
+
+---
+
+## 🎯 7. Target Group
+
+* Holds EC2 instances
+* Performs health checks
+
+Health Check:
+
+```text
+/health
+```
+
+---
+
+## 📈 8. Auto Scaling Group (ASG)
+
+* Manages EC2 instances automatically
+* Scales based on CPU usage
+
+### Behavior:
+
+* Scale Up:
+
+  * CPU increases → new instance launched
+
+* Scale Down:
+
+  * CPU decreases → instance terminated
+
+* Self-healing:
+
+  * Unhealthy instance → replaced automatically
+
+---
+
+## 🚀 9. Launch Template
+
+Defines how EC2 instances are created:
+
+* AMI (Amazon Linux)
+* Instance type
+* Key pair
+* Security groups
+* Docker installation
+* Application deployment (user_data)
+
+---
+
+## 🖥️ 10. EC2 Instances
+
+Each instance:
+
+* Runs inside Auto Scaling Group
+* Installs Docker automatically
+* Pulls application image
+* Runs Flask app container
+
+---
+
+## 🐳 11. Dockerized Application
+
+* Flask app inside Docker container
+* Runs on port `5000`
+* Exposed via port `80`
+
+Purpose:
+
+* Consistency across environments
+* Easy deployment
+
+---
+
+## ⚙️ 12. CI/CD (GitHub Actions)
+
+Workflow:
+
+1. Code pushed to GitHub
+2. GitHub Actions builds Docker image
+3. Image pushed to Docker Hub
+4. EC2 instances pull latest image
+
+---
+
+## 📦 13. Docker Hub
+
+* Stores Docker image
+* Acts as registry for deployment
 
 Example:
 
-http://44.xxx.xxx.xxx
+```text
+mohanbakthi/mohan-flask-app:latest
+```
 
 ---
 
-## Summary
+## 📊 14. CloudWatch Monitoring
 
-This project demonstrates a production-style DevOps pipeline including:
+* Tracks CPU usage
+* Provides visibility into system performance
+* Works with Auto Scaling
 
-Infrastructure provisioning with Terraform 
-Containerized application deployment with Docker 
-Automated CI/CD pipeline using GitHub Actions 
-Automated deployment to AWS EC2 
+---
 
-This setup represents a foundational DevOps workflow used in many real-world cloud environments.
+# 🔄 System Flow
+
+## 🚀 Request Flow
+
+```text
+User → ALB → Target Group → EC2 → Docker → Flask App
+```
+
+---
+
+## 🔄 Deployment Flow
+
+```text
+GitHub → GitHub Actions → Docker Hub → EC2 Instances
+```
+
+---
+
+## 📈 Scaling Flow
+
+### Scale Up
+
+```text
+Traffic ↑ → CPU ↑ → ASG → New Instance 🚀
+```
+
+### Scale Down
+
+```text
+Traffic ↓ → CPU ↓ → ASG → Instance Terminated 💸
+```
+
+---
+
+# 🌍 High Availability Design
+
+* Multi-AZ deployment
+* Load balancer distributes traffic
+* Auto Scaling ensures uptime
+* No single point of failure
+
+---
+
+# 🔐 Security Design
+
+* Separate security groups
+* Controlled inbound traffic
+* SSH access limited
+* Secrets stored in GitHub
+* Private key not stored in repo
+
+---
+
+# 💰 Cost Optimization
+
+* Auto Scaling reduces unused instances
+* Scale-down ensures lower cost
+* Suitable for near free-tier usage (with caution)
+
+---
+
+# 🚀 Why This Architecture?
+
+✔ Simple but production-like
+✔ No Kubernetes complexity
+✔ Easy to understand and extend
+✔ Suitable for beginners and real-world learning
+
+---
+
+# 🔮 Future Improvements
+
+* HTTPS with ACM
+* Route53 custom domain
+* ECR integration
+* Logging (CloudWatch Logs)
+* Blue/Green deployment
+* Private subnets + NAT Gateway
+
+---
+
+# 🎯 Summary
+
+This architecture combines:
+
+* Infrastructure (Terraform)
+* Compute (EC2)
+* Scaling (ASG)
+* Load Balancing (ALB)
+* Deployment (Docker + CI/CD)
+* Monitoring (CloudWatch)
+
+👉 Result: A **production-ready DevOps system without Kubernetes**
